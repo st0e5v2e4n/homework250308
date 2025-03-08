@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>畢氏定理互動式教學展示</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <style>
+    .draggable {
+      cursor: grab;
+    }
+    .draggable:active {
+      cursor: grabbing;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen p-4">
+  <div class="bg-white shadow-lg rounded-lg p-6 max-w-4xl w-full">
+    <h1 class="text-3xl font-bold text-center mb-4">畢氏定理互動式教學展示</h1>
+    <p class="text-gray-700 mb-6">
+      畢氏定理（也稱為勾股定理）是一個基本的幾何定理，它陳述：在任何直角三角形中，兩條直角邊的平方和等於斜邊的平方。用數學公式表示為：
+      \[ a^2 + b^2 = c^2 \]
+      其中：
+      - \( a \) 和 \( b \) 是直角三角形的兩條直角邊的長度
+      - \( c \) 是斜邊（最長的邊）的長度
+    </p>
+    <div class="flex flex-col md:flex-row gap-6">
+      <div class="flex-1">
+        <svg id="triangle-svg" class="w-full h-64 md:h-96 bg-gray-50 rounded-lg" viewBox="0 0 200 200" preserveAspectRatio="xMidYMid meet">
+          <!-- 直角三角形的邊 -->
+          <line id="side-a" x1="50" y1="150" x2="50" y2="50" stroke="blue" stroke-width="2" />
+          <line id="side-b" x1="50" y1="150" x2="150" y2="150" stroke="green" stroke-width="2" />
+          <line id="side-c" x1="50" y1="50" x2="150" y2="150" stroke="red" stroke-width="2" />
+          <!-- 直角標記 -->
+          <path d="M50 140 L60 140 L60 150 Z" fill="black" />
+          <!-- 可拖動的頂點 -->
+          <circle id="draggable-vertex" cx="150" cy="150" r="8" fill="purple" class="draggable" />
+          <!-- 邊長標籤 -->
+          <text id="label-a" x="25" y="100" fill="blue" text-anchor="middle" transform="rotate(-90, 25, 100)">a</text>
+          <text id="label-b" x="100" y="165" fill="green" text-anchor="middle">b</text>
+          <text id="label-c" x="100" y="100" fill="red" text-anchor="middle" transform="rotate(45, 100, 100)">c</text>
+        </svg>
+      </div>
+      <div class="flex-1">
+        <div class="bg-gray-50 p-4 rounded-lg">
+          <h2 class="text-xl font-semibold mb-4">邊長與計算結果</h2>
+          <div class="space-y-2">
+            <p>直角邊 \( a \)：<span id="length-a" class="font-bold">0</span></p>
+            <p>直角邊 \( b \)：<span id="length-b" class="font-bold">0</span></p>
+            <p>斜邊 \( c \)：<span id="length-c" class="font-bold">0</span></p>
+            <p class="mt-4">\( a^2 + b^2 = \) <span id="a-squared-plus-b-squared" class="font-bold">0</span></p>
+            <p>\( c^2 = \) <span id="c-squared" class="font-bold">0</span></p>
+            <p class="mt-4 text-green-600" id="pythagorean-verification">畢氏定理成立！</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const svg = document.getElementById('triangle-svg');
+    const draggableVertex = document.getElementById('draggable-vertex');
+    const sideA = document.getElementById('side-a');
+    const sideB = document.getElementById('side-b');
+    const sideC = document.getElementById('side-c');
+    const labelA = document.getElementById('label-a');
+    const labelB = document.getElementById('label-b');
+    const labelC = document.getElementById('label-c');
+    const lengthA = document.getElementById('length-a');
+    const lengthB = document.getElementById('length-b');
+    const lengthC = document.getElementById('length-c');
+    const aSquaredPlusBSquared = document.getElementById('a-squared-plus-b-squared');
+    const cSquared = document.getElementById('c-squared');
+    const pythagoreanVerification = document.getElementById('pythagorean-verification');
+
+    let isDragging = false;
+
+    // 直角頂點和底邊頂點的固定座標
+    const rightAngleX = 50, rightAngleY = 150;
+    const baseX = 50, baseY = 50;
+
+    // 更新三角形和計算結果
+    function updateTriangle(x, y) {
+      // 確保拖動頂點只能在水平或垂直方向上移動
+      const clampedX = x;
+      const clampedY = rightAngleY; // 固定 y 座標以保持直角
+
+      // 更新拖動頂點的座標
+      draggableVertex.setAttribute('cx', clampedX);
+      draggableVertex.setAttribute('cy', clampedY);
+
+      // 更新邊的座標
+      sideA.setAttribute('x1', rightAngleX);
+      sideA.setAttribute('y1', rightAngleY);
+      sideA.setAttribute('x2', baseX);
+      sideA.setAttribute('y2', baseY);
+
+      sideB.setAttribute('x1', rightAngleX);
+      sideB.setAttribute('y1', rightAngleY);
+      sideB.setAttribute('x2', clampedX);
+      sideB.setAttribute('y2', clampedY);
+
+      sideC.setAttribute('x1', baseX);
+      sideC.setAttribute('y1', baseY);
+      sideC.setAttribute('x2', clampedX);
+      sideC.setAttribute('y2', clampedY);
+
+      // 更新標籤位置
+      labelA.setAttribute('x', (rightAngleX + baseX) / 2);
+      labelA.setAttribute('y', (rightAngleY + baseY) / 2);
+      labelB.setAttribute('x', (rightAngleX + clampedX) / 2);
+      labelB.setAttribute('y', (rightAngleY + clampedY) / 2);
+      labelC.setAttribute('x', (baseX + clampedX) / 2);
+      labelC.setAttribute('y', (baseY + clampedY) / 2);
+
+      // 計算邊長
+      const a = Math.abs(rightAngleY - baseY); // 固定高度
+      const b = Math.abs(clampedX - rightAngleX); // 水平距離
+      const c = Math.sqrt(a ** 2 + b ** 2); // 斜邊長度
+
+      // 更新顯示的邊長
+      lengthA.textContent = a.toFixed(2);
+      lengthB.textContent = b.toFixed(2);
+      lengthC.textContent = c.toFixed(2);
+
+      // 計算平方值
+      const aSquared = a ** 2;
+      const bSquared = b ** 2;
+      const cSquaredValue = c ** 2;
+
+      // 更新顯示的平方值
+      aSquaredPlusBSquared.textContent = (aSquared + bSquared).toFixed(2);
+      cSquared.textContent = cSquaredValue.toFixed(2);
+
+      // 驗證畢氏定理
+      if (Math.abs((aSquared + bSquared) - cSquaredValue) < 0.01) {
+        pythagoreanVerification.textContent = '畢氏定理成立！';
+        pythagoreanVerification.classList.remove('text-red-600');
+        pythagoreanVerification.classList.add('text-green-600');
+      } else {
+        pythagoreanVerification.textContent = '畢氏定理不成立！';
+        pythagoreanVerification.classList.remove('text-green-600');
+        pythagoreanVerification.classList.add('text-red-600');
+      }
+    }
+
+    // 拖動事件處理
+    draggableVertex.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      draggableVertex.classList.add('grabbing');
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (isDragging) {
+        const rect = svg.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        // 限制拖動範圍，確保直角不變
+        const clampedX = Math.max(50, Math.min(x, 200)); // 限制 x 範圍
+        const clampedY = rightAngleY; // 固定 y 座標
+        updateTriangle(clampedX, clampedY);
+      }
+    });
+
+    document.addEventListener('mouseup', () => {
+      isDragging = false;
+      draggableVertex.classList.remove('grabbing');
+    });
+
+    // 初始化
+    updateTriangle(150, 150);
+  </script>
+</body>
+</html>
